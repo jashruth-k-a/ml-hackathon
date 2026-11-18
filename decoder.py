@@ -2,7 +2,7 @@
 from itertools import groupby
 import numpy as np
 from scipy.special import logsumexp
-from prepare import load, project, candidates
+from prepare import ROOT, load, project, candidates
 from train_models import FEATURES
 
 GAP_SECONDS = 30
@@ -76,7 +76,7 @@ def predict(trip, model):
     if len(data):
         matrix = np.column_stack([data[key] for key in FEATURES]).astype("float32")
         scores = model.predict_proba(matrix)[:, 1]
-    baseline, path, resets = decode(data, scores, arcs, raw[:, 2])
+    baseline, path, resets = decode(data, scores, arcs, raw[:, 2], float((ROOT / "experiments/motion_scale.txt").read_text()))
     return raw, nodes, arcs, points, start, delta, baseline, path, resets
 
 
@@ -90,4 +90,5 @@ def metrics(path, reference, arcs):
     similarity = SequenceMatcher(None, sequence(reference), sequence(path), autojunk=False).ratio()
     return dict(observations=len(path), correct=int((path == reference).sum()),
                 pairs=len(left), continuous=int(continuous.sum()), sequence_similarity=similarity)
+
 

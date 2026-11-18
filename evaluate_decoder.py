@@ -10,7 +10,7 @@ from threadpoolctl import threadpool_limits
 
 def main():
     out = ROOT / "experiments"
-    model = joblib.load(out / "random_forest.joblib")
+    model = joblib.load(out / (out / "selected_model.txt").read_text().strip())
     rows = []
     for trip in sorted((ROOT / "Student folder/student_test").iterdir()):
         raw, nodes, arcs, _, _, _, base, path, resets = predict(trip, model)
@@ -47,3 +47,4 @@ def main():
 if __name__ == "__main__":
     with threadpool_limits(limits=4):
         main()
+
