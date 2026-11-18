@@ -40,5 +40,5 @@ for point in gps:
                         fill=True).add_to(observations)
 view.fit_bounds(bounds)
 folium.LayerControl(collapsed=False).add_to(view)
-view.save(str(root / "training_trip_00000001.html"))
+view.save(str(root / "results/data/training_trip_00000001.html"))
 print(f"Mapped {len(gps)} observations, {len(route)} route entries and {len(roads)} nearby arcs.")

@@ -5,7 +5,7 @@ from prepare import ROOT, LIMIT, RADIUS, geometry, load, project
 
 
 def main():
-    with (ROOT / "development_inventory.csv").open() as f:
+    with (ROOT / "results/data/development_inventory.csv").open() as f:
         inventory = list(csv.DictReader(f))
     checked = 0
     for row in inventory:

@@ -139,7 +139,7 @@ def main():
                 rows.append([partition, trip.name, *process(trip, dest)])
     if not rows:
         parser.error("No matching development trips")
-    output = ROOT / ("preparation_summary.csv" if not args.trip else f"prepared/{args.trip}.csv")
+    output = ROOT / ("results/data/preparation_summary.csv" if not args.trip else f"prepared/{args.trip}.csv")
     with output.open("w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow("partition trip_id observations candidates empty misses ambiguous distant weak_components isolated largest_component min_lon min_lat max_lon max_lat".split())

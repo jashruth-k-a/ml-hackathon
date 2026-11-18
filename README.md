@@ -1,4 +1,21 @@
-# PathSnap development data handoff
+# PathSnap
+
+This Machine Learning hackathon project reconstructs vehicle routes from noisy GPS observations. This published checkpoint contains development-data preparation and an early decoder and networking demonstration.
+
+| Work in this checkpoint | Where to find it |
+|---|---|
+| Development data inventory, GPS quality, graph checks and training-trip map | [Data exploration results](results/data/) |
+| Candidate generation and reference-label alignment | [Preparation script](prepare.py) and [verification script](verify_prepared.py) |
+| Viterbi recurrence and hand-checked example | [Decoder source](src/hmm/) and [example output](results/hmm/toy_example.txt) |
+| Two-laptop connectivity demonstration | [API](api/main.py), [UI](ui/index.html) and [captured evidence](results/api/) |
+
+The networking demonstration returns the observed GPS trace. Trained-model inference, Bayesian optimisation and end-to-end route evaluation belong to later checkpoints.
+
+## Run the existing demonstrations
+
+After installing the dependencies below, run `python -m src.hmm.toy_example` to compare the toy decoder against brute-force enumeration. To rehearse the connection, run `python -m uvicorn api.main:app --host 0.0.0.0 --port 8000` on Laptop 1. The API reads the training trips by default. On Laptop 2 open `ui/index.html`, enter Laptop 1's LAN address and port, and select a development trip.
+
+## Development data handoff
 
 Run from the repository root with Python 3.11 and the supplied `Student folder/train` and `Student folder/student_test` directories in place.
 

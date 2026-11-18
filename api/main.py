@@ -10,7 +10,7 @@ Run from the project root:
 
 Environment variables:
     PATHSNAP_DATA_DIR   folder containing one sub-folder per trip
-                        (default: data/raw/train)
+                        (default: Student folder/train)
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = Path(os.environ.get("PATHSNAP_DATA_DIR", ROOT / "data" / "raw" / "train")).resolve()
+DATA_DIR = Path(os.environ.get("PATHSNAP_DATA_DIR", ROOT / "Student folder" / "train")).resolve()
 
 logging.basicConfig(
     level=logging.INFO,
