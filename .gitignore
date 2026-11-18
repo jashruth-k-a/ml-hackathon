@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 .env
 *.bundle
+/prepared/
+/member1-prepared.zip
