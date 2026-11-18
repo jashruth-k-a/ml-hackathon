@@ -1,4 +1,4 @@
-"""Hand-checkable Viterbi example (Member 3 - Decoder, first task).
+"""Hand-checkable Viterbi example.
 
 Three GPS observations, two candidate arcs each:
 

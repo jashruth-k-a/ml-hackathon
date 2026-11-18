@@ -9,7 +9,7 @@ This Machine Learning hackathon project reconstructs vehicle routes from noisy G
 | Viterbi recurrence and hand-checked example | [Decoder source](src/hmm/) and [example output](results/hmm/toy_example.txt) |
 | Two-laptop connectivity demonstration | [API](api/main.py), [UI](ui/index.html) and [captured evidence](results/api/) |
 
-The networking demonstration returns the observed GPS trace. For the trained pipeline, see the [decoder guide](MEMBER3.md), [per-trip results](experiments/decoder_results.csv) and [interactive route map](experiments/decoder_map.html).
+The networking demonstration returns the observed GPS trace. For the trained pipeline, see the [decoder guide](ROUTE_RECONSTRUCTION.md), [per-trip results](experiments/decoder_results.csv) and [interactive route map](experiments/decoder_map.html).
 
 ## Run the existing demonstrations
 
@@ -42,7 +42,7 @@ Distance captures lateral fit, fraction along the arc captures proximity to junc
 
 For development labels only, dynamic programming minimises summed point-to-segment distance under a nondecreasing index into the supplied route. It permits staying on a route entry or skipping entries across observations. Endpoints are unconstrained. It provides one deterministic assignment, not independently measured pointwise truth. Crossings, reverse arcs, stationary readings and gaps can make several assignments plausible. The ambiguity flag identifies another distinct route arc within 3 m of the assigned distance or closer, ignoring chronology for this diagnostic. Distances above 75 m flag poor geometric fits. Retain these flags for sensitivity analysis. The candidate miss denominator includes every observation, including empty sets. Never append a missing reference arc to the prediction candidates.
 
-## Member 2 interface
+## Training data interface
 
 Each prepared partition contains two NPZ files per trip. Load them with NumPy as below. The structured feature array contains one row per candidate. Label arrays have one element per original observation in track order. Trip IDs remain strings with leading zeros. Use trip ID for grouped splits. Arc and observation IDs are join keys. The labels, residuals, ambiguity and hit flags are restricted to supervision and scoring.
 

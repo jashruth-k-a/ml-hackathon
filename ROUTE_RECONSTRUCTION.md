@@ -1,6 +1,6 @@
-# Member 3 - route reconstruction
+# Route reconstruction
 
-Run `python evaluate_decoder.py` from the project environment with the student-test inputs and Member 1 prepared labels available. The predictor loads only track, nodes and arcs. It scores each candidate using the current random forest and converts positive-class probabilities into log emission scores. Normalising emissions within one observation would add the same constant to every state.
+Run `python evaluate_decoder.py` from the project environment with the student-test inputs and prepared reference labels available. The predictor loads only track, nodes and arcs. It scores each candidate using the current random forest and converts positive-class probabilities into log emission scores. Normalising emissions within one observation would add the same constant to every state.
 
 Hidden states are directed arc IDs. Each Viterbi step chooses the previous candidate maximising previous log score plus log transition probability, adds the current emission and retains a backpointer. A transition may stay on an arc or move to an arc starting at its end node. Within legal transitions the discrepancy between projected road travel and GPS displacement receives an exponential penalty (scale 5 metres), normalised per predecessor. The decoder backtracks separately after an empty observation, a gap over 30 seconds or loss of every reachable transition. Empty observations return -1. A forced restart can produce a discontinuity. This adjacency rule can miss movement across multiple short arcs within a sampling interval.
 
