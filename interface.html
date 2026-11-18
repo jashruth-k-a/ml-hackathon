@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PathSnap | Trip reconstruction</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eff3ef;color:#143a36;font:16px "Segoe UI",sans-serif}
+header{background:#143a36;color:white;padding:22px 5vw;font-weight:700;font-size:21px}main{max-width:1160px;margin:auto;padding:36px 24px}
+h1{font:600 clamp(28px,5vw,44px) Georgia,serif;margin:0 0 24px}form,section{background:white;border:1px solid #ccd8d3;border-radius:10px;padding:18px;margin-bottom:18px}
+form{display:flex;align-items:center;gap:12px;flex-wrap:wrap}select,button{padding:10px 16px;border:1px solid #94a9a1;border-radius:5px;font:inherit}
+button{background:#176558;color:white;cursor:pointer}button:disabled{opacity:.55}#status{font-size:14px}canvas{width:100%;height:48vh;background:#f8faf7;border:1px solid #d4ded5}
+.legend{display:flex;gap:20px;font-size:14px}.gps{color:#996112}.road{color:#13695b}dl{display:flex;gap:32px;flex-wrap:wrap}dd{font-size:24px;font-weight:600;margin:2px 0}dt{font-size:14px}
+</style><header>PathSnap</header><main><h1>Trip reconstruction</h1><form id="form"><label for="trip">Trip</label><select id="trip"></select>
+<button id="run" disabled>Reconstruct route</button><span id="status" role="status">Connecting to API…</span></form>
+<section id="result" hidden><h2 id="title"></h2><dl id="metrics"></dl><canvas aria-label="Geographical plot of predicted road segments and GPS observations"></canvas>
+<p class="legend"><span class="road">━ Predicted road segments</span><span class="gps">● GPS observations</span></p></section></main>
+<script>
+const el=id=>document.getElementById(id);let data;
+async function json(url,method='GET'){const response=await fetch(url,{method});if(!response.ok)throw Error((await response.json()).detail);return response.json()}
+function draw(){if(!data)return;const cv=document.querySelector('canvas'),c=cv.getContext('2d'),w=cv.clientWidth,h=cv.clientHeight;
+cv.width=w*devicePixelRatio;cv.height=h*devicePixelRatio;c.scale(devicePixelRatio,devicePixelRatio);
+const pts=data.gps.concat(data.segments.flat());let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;
+for(const [x,y] of pts){xmin=Math.min(xmin,x);xmax=Math.max(xmax,x);ymin=Math.min(ymin,y);ymax=Math.max(ymax,y)}
+const lon=Math.cos((ymax+ymin)*Math.PI/360),s=Math.min((w-40)/Math.max(1e-9,(xmax-xmin)*lon),(h-40)/Math.max(1e-9,ymax-ymin));
+const project=([x,y])=>[w/2+(x-(xmin+xmax)/2)*lon*s,h/2-(y-(ymin+ymax)/2)*s];
+c.strokeStyle='#13695b';c.lineWidth=3;c.beginPath();for(const [a,b] of data.segments){c.moveTo(...project(a));c.lineTo(...project(b))}c.stroke();
+c.fillStyle='#ab7020aa';for(const p of data.gps){c.beginPath();c.arc(...project(p),1.5,0,2*Math.PI);c.fill()}}
+window.addEventListener('resize',draw);
+json('/trips').then(ids=>{for(const id of ids)el('trip').add(new Option(id,id));el('run').disabled=!ids.length;el('status').textContent=ids.length+' trips available'}).catch(e=>el('status').textContent=e.message);
+el('form').onsubmit=async e=>{e.preventDefault();el('run').disabled=true;el('trip').disabled=true;el('result').hidden=true;el('status').textContent='Processing trip…';
+try{data=await json('/trips/'+el('trip').value+'/predict','POST');el('title').textContent='Trip '+data.trip_id;
+el('metrics').replaceChildren();for(const [key,val] of [['Point accuracy',(100*data.accuracy).toFixed(2)+'%'],['Continuity',(100*data.continuity).toFixed(2)+'%'],['Matched observations',data.matched+' / '+data.observations]]){
+const d=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=val;d.append(dt,dd);el('metrics').append(d)}
+el('result').hidden=false;draw();el('status').textContent='Reconstruction complete'}catch(err){el('status').textContent=err.message}finally{el('run').disabled=false;el('trip').disabled=false}};
+</script></html>

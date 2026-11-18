@@ -1,0 +1,17 @@
+INFO:     Started server process [20840]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:18741 (Press CTRL+C to quit)
+INFO:     127.0.0.1:53248 - "GET /trips HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49943 - "GET /trips HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60814 - "POST /trips/00000000/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50908 - "POST /trips/00000007/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50909 - "POST /trips/00000009/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56559 - "POST /trips/00000040/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54533 - "POST /trips/00000052/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65197 - "POST /trips/00000056/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60997 - "POST /trips/00000065/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49300 - "POST /trips/00000076/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49678 - "POST /trips/00000077/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52167 - "POST /trips/00000091/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52169 - "POST /trips/99999999/predict HTTP/1.1" 404 Not Found

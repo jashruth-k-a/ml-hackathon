@@ -23,3 +23,6 @@ prepared/
 /*.pdf
 /*.bundle
 /*-prepared.zip
+
+!/PathSnap-report.pdf
+/*-to-push.zip
