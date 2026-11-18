@@ -1,0 +1,35 @@
+Greedy (emission-only) route: A-D-E
+
+1. Greedy route is disconnected (A->D impossible)
+   hand calc : ACE = .6*.9*.3*.9*.8 = 0.11664 ; BDE = .4*.5*.7*.9*.8 = 0.10080 ; ADE = 0
+   expected  : A-C-E
+   decoded   : A-C-E   P = 0.11664
+   brute     : A-C-E   P = 0.11664
+   result    : PASS
+
+2. Connect A->D: Viterbi should now follow the greedy route
+   hand calc : ADE = .6*.5*.7*.9*.8 = 0.15120 ; BDE = 0.10080 ; ACE = 0.06480
+   expected  : A-D-E
+   decoded   : A-D-E   P = 0.15120
+   brute     : A-D-E   P = 0.15120
+   result    : PASS
+
+3. Weaken A->C, force B->D: path switches to start at B
+   hand calc : BDE = .4*1.*.7*.9*.8 = 0.20160 ; ACE = .6*.2*.3*.9*.8 = 0.02592
+   expected  : B-D-E
+   decoded   : B-D-E   P = 0.20160
+   brute     : B-D-E   P = 0.20160
+   result    : PASS
+
+4. No valid transition into obs 2 -> decoder must split the route
+   hand calc : seg1 AC = .162, BD = .140, BC = .060 ; seg2 E = .8 > F = .2
+   expected  : A-C-E  breaks=[2]
+   decoded   : A-C-E  breaks=[2]
+   result    : PASS
+
+5. Obs 1 has no candidates -> no arc for obs 1, chain restarts at obs 2
+   expected  : path idx [0, -1, 0]  breaks=[2]
+   decoded   : path idx [0, -1, 0]  breaks=[2]
+   result    : PASS
+
+ALL CHECKS PASSED

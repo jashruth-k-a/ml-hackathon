@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PathSnap · Route Reconstruction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #121826; --panel-2: #172033; --line: #233047;
+    --text: #e6ebf5; --muted: #8a97b0; --accent: #4f8cff; --accent-2: #22d3a6;
+    --warn: #f5b041; --err: #ff5d6c; --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text);
+         height: 100vh; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 22px;
+           border-bottom: 1px solid var(--line); background: var(--panel); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .logo { width: 30px; height: 30px; border-radius: 9px;
+          background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; }
+  .brand small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 4px; }
+  .conn { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .conn input { width: 240px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+                padding: 9px 12px; border-radius: 10px; font: 13px "JetBrains Mono", monospace; }
+  .conn input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { background: var(--accent); color: #fff; border: 0; padding: 9px 16px; border-radius: 10px;
+           font: 600 13px Inter, sans-serif; cursor: pointer; transition: filter .15s, transform .05s; }
+  button:hover { filter: brightness(1.1); } button:active { transform: translateY(1px); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px;
+          background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill.ok .dot { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); }
+  .pill.err .dot { background: var(--err); }
+
+  main { display: grid; grid-template-columns: 300px 1fr 320px; min-height: 0; }
+  aside, .right { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .right { border-right: 0; border-left: 1px solid var(--line); }
+  .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+               padding: 18px 18px 10px; font-weight: 600; }
+  .search { margin: 0 14px 10px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+            padding: 9px 12px; border-radius: 10px; font: 13px Inter, sans-serif; }
+  .trips { overflow-y: auto; padding: 0 10px 14px; }
+  .trip { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left;
+          background: transparent; color: var(--text); padding: 11px 12px; border-radius: 10px; margin-bottom: 4px;
+          font: 500 14px "JetBrains Mono", monospace; border: 1px solid transparent; }
+  .trip:hover { background: var(--panel-2); filter: none; }
+  .trip.active { background: rgba(79,140,255,.12); border-color: var(--accent); }
+  .trip span { font: 12px Inter, sans-serif; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 18px; line-height: 1.5; }
+
+  #map { height: 100%; width: 100%; background: #0e1420; }
+  .map-wrap { position: relative; min-height: 0; }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; z-index: 500; pointer-events: none;
+             background: rgba(11,15,23,.55); opacity: 0; transition: opacity .2s; }
+  .overlay.show { opacity: 1; }
+  .spinner { width: 38px; height: 38px; border: 3px solid var(--line); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .legend { position: absolute; bottom: 18px; left: 18px; z-index: 450; background: rgba(18,24,38,.92);
+            border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 12px; }
+  .legend div { display: flex; align-items: center; gap: 8px; margin: 3px 0; color: var(--muted); }
+  .sw { width: 14px; height: 4px; border-radius: 2px; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px; }
+  .card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+  .card .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .card .v { font-size: 22px; font-weight: 700; margin-top: 6px; letter-spacing: -.02em; }
+  .card.wide { grid-column: span 2; }
+  .card .v.small { font-size: 14px; font-weight: 500; color: var(--muted); line-height: 1.4; }
+  .log { margin: 0 14px 14px; flex: 1; min-height: 0; overflow-y: auto; background: #0c111b; border: 1px solid var(--line);
+         border-radius: var(--radius); padding: 10px 12px; font: 12px/1.6 "JetBrains Mono", monospace; color: var(--muted); }
+  .log .ok { color: var(--accent-2); } .log .err { color: var(--err); } .log .info { color: var(--accent); }
+  @media (max-width: 1100px) { main { grid-template-columns: 240px 1fr; } .right { display: none; } }
+    .dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.6); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M4 19c4 0 4-14 8-14s4 14 8 14"/></svg>
+    </div>
+    PathSnap <small>Map-Matching &amp; Route Reconstruction</small>
+  </div>
+  <div class="conn">
+    <span class="pill" id="status"><span class="dot"></span><span id="statusText">Not connected</span></span>
+    <label for="apiUrl" class="sr-only" style="position:absolute;left:-9999px">API URL</label>
+    <input id="apiUrl" placeholder="http://192.168.x.x:8000" />
+    <button id="connectBtn">Connect</button>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <div class="sec-title">Trips</div>
+    <input class="search" id="search" placeholder="Filter trip ID…" aria-label="Filter trips" />
+    <div class="trips" id="trips"><div class="empty">Enter the API address of Laptop 1 and press <b>Connect</b>.</div></div>
+  </aside>
+
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="overlay" id="overlay"><div class="spinner"></div></div>
+    <div class="legend">
+      <div><span class="sw" style="background:#4f8cff"></span>GPS observations</div>
+      <div><span class="sw" style="background:#22d3a6"></span>Predicted route</div>
+    </div>
+  </section>
+
+  <div class="right">
+    <div class="sec-title">Result</div>
+    <div class="cards">
+      <div class="card"><div class="k">Trip</div><div class="v" id="cTrip">—</div></div>
+      <div class="card"><div class="k">GPS points</div><div class="v" id="cPts">—</div></div>
+      <div class="card"><div class="k">Duration</div><div class="v" id="cDur">—</div></div>
+      <div class="card"><div class="k">Server time</div><div class="v" id="cMs">—</div></div>
+      <div class="card"><div class="k">Accuracy</div><div class="v" id="cAcc">—</div></div>
+      <div class="card"><div class="k">Round trip</div><div class="v" id="cRtt">—</div></div>
+      <div class="card wide"><div class="k">Pipeline</div><div class="v small" id="cMsg">Waiting for a request.</div></div>
+    </div>
+    <div class="sec-title">Activity</div>
+    <div class="log" id="log"></div>
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const map = L.map("map", { zoomControl: true }).setView([52.95, -1.85], 12);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
+  className: "dark-tiles",
+}).addTo(map);
+const layers = L.layerGroup().addTo(map);
+
+let API = "";
+let allTrips = [];
+let activeTrip = null;
+let busy = false;
+
+try { $("apiUrl").value = localStorage.getItem("pathsnap_api") || "http://localhost:8000"; } catch (_) {}
+
+function logLine(msg, cls = "") {
+  const t = new Date().toLocaleTimeString();
+  const el = document.createElement("div");
+  el.innerHTML = `<span>${t}</span> <span class="${cls}">${msg}</span>`;
+  $("log").prepend(el);
+}
+
+function setStatus(state, text) {
+  $("status").className = "pill " + state;
+  $("statusText").textContent = text;
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json" } });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch (_) {}
+    throw new Error(`${res.status} ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
+  }
+  return res.json();
+}
+
+function renderTrips() {
+  const q = $("search").value.trim();
+  const list = allTrips.filter((t) => t.includes(q));
+  if (!list.length) { $("trips").innerHTML = `<div class="empty">No trips match.</div>`; return; }
+  $("trips").innerHTML = "";
+  list.forEach((id) => {
+    const b = document.createElement("button");
+    b.className = "trip" + (id === activeTrip ? " active" : "");
+    b.innerHTML = `${id}<span>Run →</span>`;
+    b.onclick = () => predict(id);
+    $("trips").appendChild(b);
+  });
+}
+
+async function connect() {
+  API = $("apiUrl").value.trim().replace(/\/+$/, "");
+  try { localStorage.setItem("pathsnap_api", API); } catch (_) {}
+  setStatus("", "Connecting…");
+  logLine(`Connecting to ${API}`, "info");
+  try {
+    const h = await api("/health");
+    const t = await api("/trips");
+    allTrips = t.trips;
+    setStatus("ok", `Connected · ${h.trips} trips`);
+    logLine(`Connected. ${allTrips.length} trips available.`, "ok");
+    renderTrips();
+  } catch (e) {
+    setStatus("err", "Connection failed");
+    logLine(`Connection failed: ${e.message}`, "err");
+    $("trips").innerHTML = `<div class="empty">Could not reach the API. Check the address, that the server is running with <code>--host 0.0.0.0</code>, and the firewall on Laptop 1.</div>`;
+  }
+}
+
+async function predict(id) {
+  if (busy) return;
+  busy = true; activeTrip = id; renderTrips();
+  $("overlay").classList.add("show");
+  logLine(`POST /predict trip=${id}`, "info");
+  const t0 = performance.now();
+  try {
+    const r = await api("/predict", { method: "POST", body: JSON.stringify({ trip_id: id }) });
+    const rtt = performance.now() - t0;
+    layers.clearLayers();
+    const gps = r.gps || [];
+    gps.forEach(([lat, lon]) =>
+      L.circleMarker([lat, lon], { radius: 2.5, color: "#4f8cff", weight: 0, fillOpacity: .85 }).addTo(layers));
+    if (r.predicted_route && r.predicted_route.length)
+      L.polyline(r.predicted_route, { color: "#22d3a6", weight: 4, opacity: .9 }).addTo(layers);
+    if (gps.length) map.fitBounds(L.latLngBounds(gps), { padding: [30, 30] });
+
+    $("cTrip").textContent = r.trip_id;
+    $("cPts").textContent = r.n_points.toLocaleString();
+    $("cDur").textContent = `${Math.round(r.duration_s / 60)} min`;
+    $("cMs").textContent = `${r.processing_ms} ms`;
+    $("cRtt").textContent = `${Math.round(rtt)} ms`;
+    $("cAcc").textContent = r.metrics && r.metrics.accuracy != null ? `${(r.metrics.accuracy * 100).toFixed(1)}%` : "—";
+    $("cMsg").textContent = r.message || r.status;
+    logLine(`Trip ${id}: ${r.n_points} points, server ${r.processing_ms} ms`, "ok");
+  } catch (e) {
+    logLine(`Request failed: ${e.message}`, "err");
+    $("cMsg").textContent = "Request failed — see activity log.";
+  } finally {
+    $("overlay").classList.remove("show");
+    busy = false;
+  }
+}
+
+$("connectBtn").onclick = connect;
+$("apiUrl").addEventListener("keydown", (e) => e.key === "Enter" && connect());
+$("search").addEventListener("input", renderTrips);
+</script>
+</body>
+</html>
