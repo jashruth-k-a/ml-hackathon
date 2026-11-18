@@ -1,0 +1,7 @@
+/Student folder/
+/evaluator_test/
+/*.pdf
+__pycache__/
+.venv/
+.env
+*.bundle
