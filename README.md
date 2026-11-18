@@ -51,3 +51,18 @@ Observations whose reference is absent have no positive candidate. Preserve them
 | Student test | 19,160 | 172,916 | 0 | 35 | 5,852 |
 
 Training trip 00000054 accounts for 12,855 empty candidate sets and 17,401 reference misses. Training trip 00000033 has candidates for every point but 3,888 reference misses. These findings warrant per-trip reporting. Their causes are unverified. No trips were removed. Across both partitions there were no malformed GPS rows, invalid coordinates, repeated timestamps or backwards steps. There were 1,260 intervals over five seconds and a maximum interval of 153,064 seconds. No isolated nodes were found, although 89 of 90 trip networks contained multiple weak components.
+
+## Five-model training experiment
+
+Run the following after preparing the 90 development trips.
+
+```powershell
+.\.venv\Scripts\python train_models.py
+.\.venv\Scripts\python score_student_trips.py
+```
+
+The six numeric features and their column order are defined in train_models.py. The target is whether the candidate arc matches the aligned reference. The split manifest records the validation trips in each of three GroupKFold splits. Models are refitted on the 80 training trips before student testing. Scaling for logistic regression and Gaussian Naive Bayes is fitted on the training portion of each run. Tree ensembles use a fixed seed of 42. There is no resampling. Model constructor arguments in the script and the pinned scikit-learn version specify the initial configurations.
+
+Top-1 selects the candidate with highest positive-class probability. Ties favour distance order, then arc ID. Overall Top-1 includes observations with missing reference candidates. Conditional Top-1 uses only observations whose reference is present. Macro F1 and log loss describe candidate classification. Precision and recall refer to the positive class. Confusion counts are TN, FP, FN, TP. Inference time measures probability prediction on precomputed features. Continuity is the fraction of consecutive observations assigned the same directed arc or two arcs with the first ending where the second begins. Gaps can span intermediate arcs and reduce this diagnostic even for plausible travel.
+
+The five compressed joblib artifacts under experiments contain the refitted classifiers. For inference, use the feature column order in the script and predict_proba(X)[:, 1]. Identifiers and reference diagnostics are excluded from the predictors.
